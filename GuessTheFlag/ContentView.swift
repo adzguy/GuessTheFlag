@@ -9,8 +9,21 @@
 import SwiftUI
 
 struct ContentView: View {
+    
+    var countries = ["Estonia", "France", "Germany", "Ireland", "Italy", "Monaco", "Nigeria", "Poland", "Russia", "Spain", "Turkey", "Turkmenistan", "UK", "US", "Uzbekistan"]
+    
     var body: some View {
-        Text("Hello, World!")
+        ZStack {
+            LinearGradient(gradient: Gradient(colors: [.blue, .black]), startPoint: .top, endPoint: .bottom).edgesIgnoringSafeArea(.all)
+            VStack {
+                Text("Tap the flag of..")
+                .foregroundColor(.white)
+                Text("Country")
+                    .foregroundColor(.white)
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+            }
+        }
     }
 }
 
