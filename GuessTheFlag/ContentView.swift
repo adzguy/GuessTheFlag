@@ -10,22 +10,36 @@ import SwiftUI
 
 struct FlagImage: ViewModifier {
     var flag : String
+    var animationAmount: CGFloat = 0.0
     func body(content: Content) -> some View {
         ZStack {
             content
             Image(flag)
                 .renderingMode(.original)
-                //.clipShape(Capsule())
-                .shadow(color:.black, radius: 2)
-                .overlay(Rectangle().stroke(Color.black, lineWidth: 2))
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule()
+                        .stroke(Color.black, lineWidth: 1))
+                .shadow(color:.black, radius: 1)
         }
-
     }
 }
 
 extension View {
     func flagStyle(with flag: String) -> some View {
         self.modifier(FlagImage(flag: flag))
+    }
+}
+
+struct Shake: GeometryEffect {
+    var amount: CGFloat = 10
+    var shakesPerUnit = 3
+    var animatableData: CGFloat
+
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        ProjectionTransform(CGAffineTransform(translationX:
+            amount * sin(animatableData * .pi * CGFloat(shakesPerUnit)),
+            y: 0))
     }
 }
 
@@ -36,6 +50,11 @@ struct ContentView: View {
     @State private var showingScore = false
     @State private var scoreTitle = ""
     @State private var score = 0
+    
+    @State private var animationAmount = 0.0
+    @State private var attempts: Int = 0
+    @State private var flip = false
+    @State private var wrong = false
     
     var body: some View {
         ZStack {
@@ -48,29 +67,48 @@ struct ContentView: View {
                     Text(countries[correctAnswer])
                         .foregroundColor(.white)
                         .font(.largeTitle)
-                        .fontWeight(.bold)
+                        .fontWeight(.black)
                 }
                 
                 ForEach(0..<3) { number in
                     Button(action: {
                         //flag was tapped
                         self.flagTapped(number)
-                    }) {
+                        withAnimation {
+                            if number == self.correctAnswer {
+                                self.animationAmount += 360
+                            }
+                            else {
+                                self.attempts += 1
+                            }
+                        }
+                    })
+                    {
+                        
                         Image(self.countries[number])
-                            .flagStyle(with: self.countries[number])
+                            //.flagStyle(with: self.countries[number])
+                            .renderingMode(.original)
+                            .clipShape(Capsule())
+                            .overlay(
+                                Capsule()
+                                    .stroke(Color.black, lineWidth: 1)
+                                    .shadow(color:.black, radius: 1)
+                            )
+                            .rotation3DEffect(.degrees( Double(self.animationAmount)), axis: (x: 0, y: number == self.correctAnswer ? 1 : 0, z: 0 ))
+                            .modifier(Shake(animatableData: CGFloat(self.attempts)))
 
                     }
-                    
+
                 }
                 Text("Score: \(score)")
                     .foregroundColor(.white).fontWeight(.heavy)
                 Spacer()
             }
-            .alert(isPresented: $showingScore) {
-                Alert(title: Text(scoreTitle), message: Text("Your score is \(score)"), dismissButton: .default(Text("Continue")){
-                    self.askQuestion()
-                    })
-            }
+        }
+        .alert(isPresented: $showingScore) {
+            Alert(title: Text(scoreTitle), message: Text("Your score is \(score)"), dismissButton: .default(Text("Continue")){
+                self.askQuestion()
+                })
         }
     }
     
@@ -78,9 +116,11 @@ struct ContentView: View {
         if number == correctAnswer {
             scoreTitle = "Correct"
             score += 10
+            flip = true
         }
         else {
             scoreTitle = "Wrong! That is the flag of \(countries[number])"
+            wrong = true
         }
         showingScore = true
     }
@@ -88,6 +128,8 @@ struct ContentView: View {
     func askQuestion() {
         countries.shuffle()
         correctAnswer = Int.random(in: 0...2)
+        flip = false
+        wrong = false
     }
 }
 
